@@ -104,7 +104,7 @@ export function FinePaymentDialog({
     return e;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -115,7 +115,7 @@ export function FinePaymentDialog({
     const member = members.find((m) => m.id === selectedMemberId)!;
     const count = selectedFineIds.length;
 
-    const payment = addPayment({
+    const payment = await addPayment({
       memberId: selectedMemberId,
       memberName: member.name,
       concept: "event_fine",

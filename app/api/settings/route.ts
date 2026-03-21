@@ -1,42 +1,50 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
 
+// 🔹 GET: obtener configuraciones
 export async function GET() {
   try {
-    const settings = await prisma.setting.findMany();
-
+    const result = await pool.query("SELECT key, value FROM settings");
     return NextResponse.json({
-      settings: settings.map((s: { key: string; value: string }) => ({
-        key: s.key,
-        value: s.value,
-      })),
+      settings: result.rows,
     });
   } catch (error) {
     console.error("[GET /api/settings]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
+// 🔹 PUT: actualizar o crear configuración
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { key, value }: { key: string; value: string } = body;
+    const { key, value } = body;
 
-    const setting = await prisma.setting.upsert({
-      where: { key },
-      create: { key, value },
-      update: { value },
-    });
+    // Intentar actualizar
+    const update = await pool.query(
+      "UPDATE settings SET value = $1 WHERE key = $2 RETURNING *",
+      [value, key]
+    );
 
-    return NextResponse.json({ key: setting.key, value: setting.value });
+    // Si no existe → insertar
+    const setting =
+      update.rows[0] ||
+      (
+        await pool.query(
+          "INSERT INTO settings (key, value) VALUES ($1, $2) RETURNING *",
+          [key, value]
+        )
+      ).rows[0];
+
+    return NextResponse.json(setting);
   } catch (error) {
     console.error("[PUT /api/settings]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

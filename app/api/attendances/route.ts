@@ -1,91 +1,115 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
 
-function transformAttendance(attendance: {
+// 🔹 Tipo BD (ids text/uuid en el esquema actual)
+type AttendanceRow = {
   id: string;
-  eventId: string;
-  memberId: string;
+  event_id: string;
+  member_id: string;
   attended: boolean;
-  fineGenerated: boolean;
-  fineAmount: number;
-  finePaid: boolean;
-  finePaymentId: string | null;
-  createdAt: Date;
-}) {
+  fine_generated: boolean;
+  fine_amount: number;
+  fine_paid: boolean;
+  fine_payment_id: string | null;
+  created_at: string;
+};
+
+// 🔹 Transformación
+function transformAttendance(a: AttendanceRow) {
   return {
-    id: attendance.id,
-    eventId: attendance.eventId,
-    memberId: attendance.memberId,
-    attended: attendance.attended,
-    fineGenerated: attendance.fineGenerated,
-    fineAmount: attendance.fineAmount,
-    finePaid: attendance.finePaid,
-    finePaymentId: attendance.finePaymentId ?? undefined,
-    createdAt: attendance.createdAt.toISOString(),
+    id: String(a.id),
+    eventId: String(a.event_id),
+    memberId: String(a.member_id),
+    attended: a.attended,
+    fineGenerated: a.fine_generated,
+    fineAmount: a.fine_amount,
+    finePaid: a.fine_paid,
+    finePaymentId:
+      a.fine_payment_id != null ? String(a.fine_payment_id) : undefined,
+    createdAt: a.created_at,
   };
 }
 
+// 🔹 GET
 export async function GET() {
   try {
-    const attendances = await prisma.eventAttendance.findMany({
-      orderBy: { createdAt: "asc" },
-    });
+    const result = await pool.query(
+      `SELECT id, event_id, member_id, attended, fine_generated, fine_amount, fine_paid, fine_payment_id, created_at
+       FROM event_attendances
+       ORDER BY created_at ASC`
+    );
 
-    return NextResponse.json(attendances.map(transformAttendance));
+    const attendances = (result.rows as AttendanceRow[]).map(transformAttendance);
+
+    return NextResponse.json(attendances);
   } catch (error) {
     console.error("[GET /api/attendances]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
+// 🔹 POST
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      eventId,
-      memberIds,
-      eventAmount,
-    }: {
+    const body: {
       eventId: string;
       memberIds: string[];
       eventAmount: number;
-    } = body;
+    } = await request.json();
 
-    const existing = await prisma.eventAttendance.findMany({
-      where: { eventId },
-      select: { memberId: true },
-    });
+    const { eventId, memberIds, eventAmount } = body;
 
-    const existingMemberIds = new Set(
-      existing.map((a: { memberId: string }) => a.memberId),
+    // 🔹 Obtener miembros existentes
+    const existingResult = await pool.query(
+      `SELECT member_id FROM event_attendances WHERE event_id = $1`,
+      [eventId]
     );
 
-    const newMemberIds = memberIds.filter((id) => !existingMemberIds.has(id));
+    const existingMemberIds = new Set(
+      (existingResult.rows as { member_id: string }[]).map((a) =>
+        String(a.member_id),
+      ),
+    );
+
+    const newMemberIds = memberIds
+      .map(String)
+      .filter((id) => !existingMemberIds.has(id));
 
     if (newMemberIds.length === 0) {
       return NextResponse.json({ created: 0 }, { status: 201 });
     }
 
-    const result = await prisma.eventAttendance.createMany({
-      data: newMemberIds.map((memberId) => ({
-        eventId,
-        memberId,
-        attended: false,
-        fineGenerated: eventAmount > 0,
-        fineAmount: eventAmount,
-        finePaid: false,
-      })),
-    });
+    // 🔹 Insertar nuevos registros
+    const values = newMemberIds.map((memberId) => [
+      eventId,
+      memberId,
+      false,
+      eventAmount > 0,
+      eventAmount,
+      false,
+    ]);
 
-    return NextResponse.json({ created: result.count }, { status: 201 });
+    for (const v of values) {
+      await pool.query(
+        `INSERT INTO event_attendances 
+        (event_id, member_id, attended, fine_generated, fine_amount, fine_paid)
+        VALUES ($1, $2, $3, $4, $5, $6)`,
+        v
+      );
+    }
+
+    return NextResponse.json(
+      { created: newMemberIds.length },
+      { status: 201 }
+    );
   } catch (error) {
     console.error("[POST /api/attendances]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

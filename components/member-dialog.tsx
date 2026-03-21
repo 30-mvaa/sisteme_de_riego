@@ -82,7 +82,7 @@ export function MemberDialog({ open, onOpenChange, member }: MemberDialogProps) 
     return newErrors;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
@@ -106,9 +106,9 @@ export function MemberDialog({ open, onOpenChange, member }: MemberDialogProps) 
 
     let error: string | null;
     if (member) {
-      error = updateMember(member.id, memberData);
+      error = await updateMember(member.id, memberData);
     } else {
-      error = addMember(memberData);
+      error = await addMember(memberData);
     }
     if (error) {
       setErrors({ general: error });

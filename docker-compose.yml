@@ -1,0 +1,15 @@
+services:
+  postgrest:
+    image: postgrest/postgrest:latest
+    ports:
+      - "3001:3000"
+    environment:
+      # Point to your existing Postgres instance (from .env DATABASE_URL)
+      PGRST_DB_URI: ${DATABASE_URL}
+      # Expose only objects inside this schema via PostgREST (we use views suffixed _v).
+      PGRST_DB_SCHEMA: public
+      PGRST_DB_ANON_ROLE: anon
+      # Optional: if you enable JWT/RLS later.
+      # PGRST_JWT_SECRET: ${POSTGREST_JWT_SECRET}
+      PGRST_SERVER_PROXY_URI: http://localhost:3001
+

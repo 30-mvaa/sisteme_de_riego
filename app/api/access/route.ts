@@ -1,94 +1,92 @@
-import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
 
+// 🔹 Tipo BD
+type UserRow = {
+  id: string;
+  username: string;
+  name: string;
+  role: string;
+  enabled: boolean;
+  created_at: string;
+};
+
+// 🔹 GET: listar usuarios
 export async function GET() {
   try {
-    const users = await prisma.authUser.findMany({
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        role: true,
-        enabled: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: "asc" },
-    });
-
-    const transformed = users.map(
-      (u: {
-        id: string;
-        username: string;
-        name: string;
-        role: string;
-        enabled: boolean;
-        createdAt: Date;
-      }) => ({
-        id: u.id,
-        username: u.username,
-        name: u.name,
-        role: u.role,
-        enabled: u.enabled,
-        createdAt: u.createdAt.toISOString(),
-      }),
+    const result = await pool.query(
+      `SELECT id, username, name, role, enabled, created_at
+       FROM auth_users
+       ORDER BY created_at ASC`
     );
 
-    return NextResponse.json(transformed);
+    const users = (result.rows as UserRow[]).map((u) => ({
+      id: String(u.id),
+      username: u.username,
+      name: u.name,
+      role: u.role,
+      enabled: u.enabled,
+      createdAt: u.created_at,
+    }));
+
+    return NextResponse.json(users);
   } catch (error) {
     console.error("[GET /api/access]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
+// 🔹 POST: crear usuario
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const {
-      username,
-      password,
-      name,
-      role,
-      enabled,
-    }: {
+    const body: {
       username: string;
       password: string;
       name: string;
       role: string;
       enabled: boolean;
-    } = body;
+    } = await request.json();
 
-    const existing = await prisma.authUser.findUnique({ where: { username } });
-    if (existing) {
+    const { username, password, name, role, enabled } = body;
+
+    // 🔹 Verificar si ya existe
+    const existing = await pool.query(
+      "SELECT id FROM auth_users WHERE username = $1 LIMIT 1",
+      [username]
+    );
+
+    if (existing.rows.length > 0) {
       return NextResponse.json(
         { error: "El nombre de usuario ya está en uso." },
-        { status: 409 },
+        { status: 409 }
       );
     }
 
+    // 🔹 Hash contraseña
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = await prisma.authUser.create({
-      data: {
-        username,
-        password: hashedPassword,
-        name,
-        role: role as "admin" | "user",
-        enabled,
-      },
-    });
+    // 🔹 Insertar usuario
+    const result = await pool.query(
+      `INSERT INTO auth_users (username, password, name, role, enabled)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, username, name, role, enabled, created_at`,
+      [username, hashedPassword, name, role, enabled]
+    );
+
+    const user = result.rows[0] as UserRow;
 
     return NextResponse.json(
       {
-        id: user.id,
+        id: String(user.id),
         username: user.username,
         name: user.name,
         role: user.role,
         enabled: user.enabled,
-        createdAt: user.createdAt.toISOString(),
+        createdAt: user.created_at,
       },
       { status: 201 },
     );
@@ -96,7 +94,7 @@ export async function POST(request: NextRequest) {
     console.error("[POST /api/access]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

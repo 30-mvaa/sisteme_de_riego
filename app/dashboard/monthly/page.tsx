@@ -198,7 +198,7 @@ export default function MonthlyChargesPage() {
     setPayError("");
   };
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!panelMember) return;
     if (selectedChargeIds.length === 0) {
       setPayError("Selecciona al menos una cuota.");
@@ -209,18 +209,22 @@ export default function MonthlyChargesPage() {
       return;
     }
     setPaying(true);
-    const count = selectedChargeIds.length;
-    const payment = addPayment({
-      memberId: panelMember.id,
-      memberName: panelMember.name,
-      concept: "monthly",
-      description: `Pago de ${count} cuota${count !== 1 ? "s" : ""} mensual${count !== 1 ? "es" : ""}`,
-      amount: panelTotal,
-      date: payDate,
-      monthlyChargeIds: selectedChargeIds,
-    });
-    closePayPanel();
-    router.push(`/dashboard/payments/${payment.id}`);
+    try {
+      const count = selectedChargeIds.length;
+      const payment = await addPayment({
+        memberId: panelMember.id,
+        memberName: panelMember.name,
+        concept: "monthly",
+        description: `Pago de ${count} cuota${count !== 1 ? "s" : ""} mensual${count !== 1 ? "es" : ""}`,
+        amount: panelTotal,
+        date: payDate,
+        monthlyChargeIds: selectedChargeIds,
+      });
+      closePayPanel();
+      router.push(`/dashboard/payments/${payment.id}`);
+    } finally {
+      setPaying(false);
+    }
   };
 
   const handleOpenRateEdit = () => {

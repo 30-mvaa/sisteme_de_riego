@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useApp } from "@/lib/app-context";
 import type { AuthUser, Role } from "@/lib/types";
-import { SUPERADMIN_ID } from "@/lib/data";
+import { SUPERADMIN_USERNAME } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -147,7 +147,7 @@ export default function AccessPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
@@ -161,9 +161,9 @@ export default function AccessPage() {
 
     let error: string | null = null;
     if (editingUser) {
-      error = updateAuthUser(editingUser.id, data);
+      error = await updateAuthUser(editingUser.id, data);
     } else {
-      error = addAuthUser(data);
+      error = await addAuthUser(data);
     }
 
     if (error) {
@@ -181,9 +181,9 @@ export default function AccessPage() {
   };
 
   const getRoleBadge = (user: AuthUser) => {
-    if (user.id === SUPERADMIN_ID) {
+    if (user.username === SUPERADMIN_USERNAME) {
       return (
-        <Badge className="bg-gradient-to-r from-blue-600 to-violet-600 text-white border-0 gap-1">
+        <Badge className="bg-linear-to-r from-blue-600 to-violet-600 text-white border-0 gap-1">
           <ShieldCheck size={11} />
           Super Admin
         </Badge>
@@ -290,7 +290,8 @@ export default function AccessPage() {
             ) : (
               authUsers.map((user) => {
                 const isSelf = user.id === currentUser?.id;
-                const isSuperAdminAccount = user.id === SUPERADMIN_ID;
+                const isSuperAdminAccount =
+                  user.username === SUPERADMIN_USERNAME;
 
                 return (
                   <tr
@@ -306,7 +307,7 @@ export default function AccessPage() {
                           className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold shrink-0"
                           style={{
                             background:
-                              user.id === SUPERADMIN_ID
+                              user.username === SUPERADMIN_USERNAME
                                 ? "linear-gradient(135deg, #2563eb, #7c3aed)"
                                 : user.role === "admin"
                                   ? "linear-gradient(135deg, #0ea5e9, #2563eb)"

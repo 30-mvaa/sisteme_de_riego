@@ -32,12 +32,17 @@ export function LoginForm() {
     e.preventDefault();
     setError("");
     setLoading(true);
-    await new Promise((r) => setTimeout(r, 350));
-    const success = login(username, password);
-    if (success) {
-      router.push("/dashboard");
-    } else {
-      setError("Usuario o contraseña incorrectos.");
+    try {
+      await new Promise((r) => setTimeout(r, 350));
+      const result = await login(username, password);
+      if (result.ok) {
+        router.push("/dashboard");
+      } else {
+        setError(result.error ?? "Usuario o contraseña incorrectos.");
+      }
+    } catch {
+      setError("Error de conexión.");
+    } finally {
       setLoading(false);
     }
   };

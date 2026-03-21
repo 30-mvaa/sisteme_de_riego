@@ -202,7 +202,7 @@ export default function EventsPage() {
     setPayError("");
   };
 
-  const handlePayFines = () => {
+  const handlePayFines = async () => {
     if (selectedFineIds.length === 0) {
       setPayError("Selecciona al menos una multa.");
       return;
@@ -213,33 +213,37 @@ export default function EventsPage() {
     }
     setPaying(true);
 
-    // Group fines by member and create one payment per member
-    const byMember: Record<string, typeof panelFines> = {};
-    panelSelectedFines.forEach((f) => {
-      if (!byMember[f.memberId]) byMember[f.memberId] = [];
-      byMember[f.memberId].push(f);
-    });
-
-    const paymentIds: string[] = [];
-    Object.entries(byMember).forEach(([memberId, fines]) => {
-      const member = members.find((m) => m.id === memberId)!;
-      const amount = fines.reduce((sum, f) => sum + f.fineAmount, 0);
-      const count = fines.length;
-      const p = addPayment({
-        memberId,
-        memberName: member.name,
-        concept: "event_fine",
-        description: `Pago de ${count} multa${count !== 1 ? "s" : ""} por inasistencia — ${panelEvent?.name}`,
-        amount,
-        date: payDate,
-        attendanceIds: fines.map((f) => f.id),
+    try {
+      // Group fines by member and create one payment per member
+      const byMember: Record<string, typeof panelFines> = {};
+      panelSelectedFines.forEach((f) => {
+        if (!byMember[f.memberId]) byMember[f.memberId] = [];
+        byMember[f.memberId].push(f);
       });
-      paymentIds.push(p.id);
-    });
 
-    closeFinePanel();
-    if (paymentIds.length > 0) {
-      router.push(`/dashboard/payments/${paymentIds[paymentIds.length - 1]}`);
+      const paymentIds: string[] = [];
+      for (const [memberId, fines] of Object.entries(byMember)) {
+        const member = members.find((m) => m.id === memberId)!;
+        const amount = fines.reduce((sum, f) => sum + f.fineAmount, 0);
+        const count = fines.length;
+        const p = await addPayment({
+          memberId,
+          memberName: member.name,
+          concept: "event_fine",
+          description: `Pago de ${count} multa${count !== 1 ? "s" : ""} por inasistencia — ${panelEvent?.name}`,
+          amount,
+          date: payDate,
+          attendanceIds: fines.map((f) => f.id),
+        });
+        paymentIds.push(p.id);
+      }
+
+      closeFinePanel();
+      if (paymentIds.length > 0) {
+        router.push(`/dashboard/payments/${paymentIds[paymentIds.length - 1]}`);
+      }
+    } finally {
+      setPaying(false);
     }
   };
 

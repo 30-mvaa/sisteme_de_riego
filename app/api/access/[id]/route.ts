@@ -1,35 +1,36 @@
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
 
-// PUT /api/access/[id] — Actualizar usuario de acceso
+// 🔹 Tipo BD
+type UserRow = {
+  id: string;
+  username: string;
+  name: string;
+  role: string;
+  enabled: boolean;
+  created_at: string;
+};
+
+// 🔹 PUT — actualizar usuario
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const {
-      username,
-      password,
-      name,
-      role,
-      enabled,
-    }: {
-      username?: string;
-      password?: string;
-      name?: string;
-      role?: string;
-      enabled?: boolean;
-    } = body;
 
-    // Verificar unicidad de username excluyendo el propio id
-    if (username !== undefined) {
-      const existing = await prisma.authUser.findFirst({
-        where: { username, NOT: { id } },
-      });
-      if (existing) {
+    const { username, password, name, role, enabled } = body;
+
+    // 🔹 validar username único
+    if (username) {
+      const existing = await pool.query(
+        "SELECT id FROM auth_users WHERE username = $1 AND id::text <> $2 LIMIT 1",
+        [username, id],
+      );
+
+      if (existing.rows.length > 0) {
         return NextResponse.json(
           { error: "El nombre de usuario ya está en uso." },
           { status: 409 }
@@ -37,38 +38,59 @@ export async function PUT(
       }
     }
 
-    // Construir objeto de actualización solo con los campos recibidos
-    const data: Record<string, unknown> = {};
-    if (username !== undefined) data.username = username;
-    if (name !== undefined) data.name = name;
-    if (role !== undefined) data.role = role;
-    if (enabled !== undefined) data.enabled = enabled;
+    // 🔹 construir update dinámico
+    const fields: string[] = [];
+    const values: any[] = [];
+    let index = 1;
 
-    // Hashear password si viene y no está vacío
+    if (username) {
+      fields.push(`username = $${index++}`);
+      values.push(username);
+    }
+    if (name) {
+      fields.push(`name = $${index++}`);
+      values.push(name);
+    }
+    if (role) {
+      fields.push(`role = $${index++}`);
+      values.push(role);
+    }
+    if (enabled !== undefined) {
+      fields.push(`enabled = $${index++}`);
+      values.push(enabled);
+    }
     if (password && password.trim() !== "") {
-      data.password = await bcrypt.hash(password, 12);
+      const hashed = await bcrypt.hash(password, 12);
+      fields.push(`password = $${index++}`);
+      values.push(hashed);
     }
 
-    const updated = await prisma.authUser.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        role: true,
-        enabled: true,
-        createdAt: true,
-      },
-    });
+    if (fields.length === 0) {
+      return NextResponse.json(
+        { error: "No hay datos para actualizar" },
+        { status: 400 }
+      );
+    }
+
+    values.push(id);
+
+    const result = await pool.query(
+      `UPDATE auth_users 
+       SET ${fields.join(", ")}
+       WHERE id::text = $${index}
+       RETURNING id, username, name, role, enabled, created_at`,
+      values,
+    );
+
+    const user = result.rows[0] as UserRow;
 
     return NextResponse.json({
-      id: updated.id,
-      username: updated.username,
-      name: updated.name,
-      role: updated.role,
-      enabled: updated.enabled,
-      createdAt: updated.createdAt.toISOString(),
+      id: String(user.id),
+      username: user.username,
+      name: user.name,
+      role: user.role,
+      enabled: user.enabled,
+      createdAt: user.created_at,
     });
   } catch (error) {
     console.error("[PUT /api/access/[id]]", error);
@@ -79,15 +101,21 @@ export async function PUT(
   }
 }
 
-// PATCH /api/access/[id] — Toggle enabled (habilitar/deshabilitar)
+// 🔹 PATCH — toggle enabled
 export async function PATCH(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
 
-    const user = await prisma.authUser.findUnique({ where: { id } });
+    const userRes = await pool.query(
+      "SELECT id, enabled FROM auth_users WHERE id::text = $1 LIMIT 1",
+      [id],
+    );
+
+    const user = userRes.rows[0];
+
     if (!user) {
       return NextResponse.json(
         { error: "Usuario no encontrado." },
@@ -95,26 +123,23 @@ export async function PATCH(
       );
     }
 
-    const updated = await prisma.authUser.update({
-      where: { id },
-      data: { enabled: !user.enabled },
-      select: {
-        id: true,
-        username: true,
-        name: true,
-        role: true,
-        enabled: true,
-        createdAt: true,
-      },
-    });
+    const updatedRes = await pool.query(
+      `UPDATE auth_users 
+       SET enabled = $1
+       WHERE id::text = $2
+       RETURNING id, username, name, role, enabled, created_at`,
+      [!user.enabled, id],
+    );
+
+    const updated = updatedRes.rows[0] as UserRow;
 
     return NextResponse.json({
-      id: updated.id,
+      id: String(updated.id),
       username: updated.username,
       name: updated.name,
       role: updated.role,
       enabled: updated.enabled,
-      createdAt: updated.createdAt.toISOString(),
+      createdAt: updated.created_at,
     });
   } catch (error) {
     console.error("[PATCH /api/access/[id]]", error);
@@ -125,15 +150,21 @@ export async function PATCH(
   }
 }
 
-// DELETE /api/access/[id] — Eliminar usuario de acceso
+// 🔹 DELETE
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
 
-    const user = await prisma.authUser.findUnique({ where: { id } });
+    const userRes = await pool.query(
+      "SELECT username FROM auth_users WHERE id::text = $1 LIMIT 1",
+      [id],
+    );
+
+    const user = userRes.rows[0];
+
     if (!user) {
       return NextResponse.json(
         { error: "Usuario no encontrado." },
@@ -148,7 +179,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.authUser.delete({ where: { id } });
+    await pool.query("DELETE FROM auth_users WHERE id::text = $1", [id]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

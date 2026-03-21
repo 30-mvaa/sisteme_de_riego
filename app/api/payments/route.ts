@@ -1,57 +1,25 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import pool from "@/lib/db";
+import { paymentFromRow } from "@/lib/db-mappers";
 
-type PaymentWithRelations = {
-  id: string;
-  memberId: string;
-  memberName: string;
-  concept: string;
-  description: string;
-  amount: number;
-  date: string;
-  receiptNumber: string;
-  createdAt: Date;
-  monthlyCharges: { id: string }[];
-  fines: { id: string }[];
-};
-
-function transformPayment(payment: PaymentWithRelations) {
-  return {
-    id: payment.id,
-    memberId: payment.memberId,
-    memberName: payment.memberName,
-    concept: payment.concept,
-    description: payment.description,
-    amount: payment.amount,
-    date: payment.date,
-    receiptNumber: payment.receiptNumber,
-    createdAt: payment.createdAt.toISOString(),
-    monthlyChargeIds: payment.monthlyCharges.map((c) => c.id),
-    attendanceIds: payment.fines.map((f) => f.id),
-  };
-}
-
+// 🔹 GET: listar pagos
 export async function GET() {
   try {
-    const payments = await prisma.payment.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        monthlyCharges: { select: { id: true } },
-        fines: { select: { id: true } },
-      },
-    });
-
-    return NextResponse.json(payments.map(transformPayment));
-  } catch (error) {
-    console.error("[GET /api/payments]", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
+    const result = await pool.query(
+      "SELECT * FROM payments ORDER BY created_at DESC"
     );
+    return NextResponse.json(
+      result.rows.map((r: Record<string, unknown>) => paymentFromRow(r)),
+    );
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
 
+// 🔹 POST: crear pago
 export async function POST(request: NextRequest) {
+  const client = await pool.connect();
   try {
     const body = await request.json();
     const {
@@ -61,9 +29,9 @@ export async function POST(request: NextRequest) {
       description,
       amount,
       date,
-      monthlyChargeIds = [],
-      attendanceIds = [],
-    }: {
+      monthlyChargeIds,
+      attendanceIds,
+    } = body as {
       memberId: string;
       memberName: string;
       concept: string;
@@ -72,51 +40,63 @@ export async function POST(request: NextRequest) {
       date: string;
       monthlyChargeIds?: string[];
       attendanceIds?: string[];
-    } = body;
+    };
 
-    const count = await prisma.payment.count();
+    // Generar número de recibo
+    const countResult = await client.query("SELECT COUNT(*) FROM payments");
+    const count = Number(countResult.rows[0].count) + 1;
+
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, "0");
-    const seq = String(count + 1).padStart(4, "0");
-    const receiptNumber = `REC-${year}${month}-${seq}`;
+    const receiptNumber = `REC-${year}${month}-${String(count).padStart(4, "0")}`;
 
-    const payment = await prisma.payment.create({
-      data: {
-        memberId,
-        memberName,
-        concept: concept as "monthly" | "event_fine" | "other",
-        description,
-        amount,
-        date,
-        receiptNumber,
-      },
-      include: {
-        monthlyCharges: { select: { id: true } },
-        fines: { select: { id: true } },
-      },
-    });
+    await client.query("BEGIN");
 
-    if (monthlyChargeIds.length > 0) {
-      await prisma.monthlyCharge.updateMany({
-        where: { id: { in: monthlyChargeIds } },
-        data: { paid: true, paymentId: payment.id },
-      });
-    }
-
-    if (attendanceIds.length > 0) {
-      await prisma.eventAttendance.updateMany({
-        where: { id: { in: attendanceIds } },
-        data: { finePaid: true, finePaymentId: payment.id },
-      });
-    }
-
-    return NextResponse.json(transformPayment(payment), { status: 201 });
-  } catch (error) {
-    console.error("[POST /api/payments]", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
+    const result = await client.query(
+      `INSERT INTO payments 
+      (member_id, member_name, concept, description, amount, date, receipt_number)
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      RETURNING *`,
+      [memberId, memberName, concept, description, amount, date, receiptNumber],
     );
+
+    const paymentId = String(result.rows[0].id);
+
+    if (monthlyChargeIds?.length) {
+      for (const cid of monthlyChargeIds) {
+        await client.query(
+          `UPDATE monthly_charges
+           SET paid = true, payment_id = $1
+           WHERE id::text = $2`,
+          [paymentId, String(cid)],
+        );
+      }
+    }
+
+    if (attendanceIds?.length) {
+      for (const aid of attendanceIds) {
+        await client.query(
+          `UPDATE event_attendances
+           SET fine_paid = true, fine_payment_id = $1
+           WHERE id::text = $2`,
+          [paymentId, String(aid)],
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+
+    return NextResponse.json(paymentFromRow(result.rows[0]), { status: 201 });
+  } catch (error) {
+    try {
+      await client.query("ROLLBACK");
+    } catch {
+      /* ignore */
+    }
+    console.error(error);
+    return NextResponse.json({ error: "Error interno" }, { status: 500 });
+  } finally {
+    client.release();
   }
 }

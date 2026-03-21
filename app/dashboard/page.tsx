@@ -84,7 +84,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-violet-600 flex items-center justify-center animate-pulse">
+          <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-600 to-violet-600 flex items-center justify-center animate-pulse">
             <Droplets size={20} className="text-white" />
           </div>
           <p className="text-sm text-gray-500">Cargando...</p>
@@ -155,7 +155,7 @@ export default function DashboardPage() {
           <Link href="/dashboard/reports" className="group">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
               <div className="flex items-start justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-sm">
+                <div className="w-10 h-10 rounded-xl bg-linear-to-br from-green-400 to-emerald-600 flex items-center justify-center shadow-sm">
                   <DollarSign size={18} className="text-white" />
                 </div>
                 <ArrowRight
@@ -175,7 +175,7 @@ export default function DashboardPage() {
             <Link href="/dashboard/users" className="group">
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center shadow-sm">
+                  <div className="w-10 h-10 rounded-xl bg-linear-to-br from-blue-400 to-indigo-600 flex items-center justify-center shadow-sm">
                     <Users size={18} className="text-white" />
                   </div>
                   <ArrowRight
@@ -198,7 +198,7 @@ export default function DashboardPage() {
             <Link href="/dashboard/events" className="group">
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
                 <div className="flex items-start justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-sm">
+                  <div className="w-10 h-10 rounded-xl bg-linear-to-br from-violet-400 to-purple-600 flex items-center justify-center shadow-sm">
                     <CalendarDays size={18} className="text-white" />
                   </div>
                   <ArrowRight
@@ -228,8 +228,8 @@ export default function DashboardPage() {
                   <div
                     className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-sm ${
                       pendingFinesCount > 0
-                        ? "bg-gradient-to-br from-amber-400 to-orange-500"
-                        : "bg-gradient-to-br from-gray-300 to-gray-400"
+                        ? "bg-linear-to-br from-amber-400 to-orange-500"
+                        : "bg-linear-to-br from-gray-300 to-gray-400"
                     }`}
                   >
                     <AlertTriangle size={18} className="text-white" />
@@ -313,7 +313,7 @@ export default function DashboardPage() {
           <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-violet-600 flex items-center justify-center">
+                <div className="w-7 h-7 rounded-lg bg-linear-to-br from-blue-500 to-violet-600 flex items-center justify-center">
                   <Receipt size={13} className="text-white" />
                 </div>
                 <h2 className="text-sm font-semibold text-gray-800">
@@ -431,7 +431,7 @@ export default function DashboardPage() {
                       <Link key={item.href} href={item.href} className="group">
                         <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
                           <div
-                            className={`w-9 h-9 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center shrink-0 shadow-sm`}
+                            className={`w-9 h-9 rounded-xl bg-linear-to-br ${item.color} flex items-center justify-center shrink-0 shadow-sm`}
                           >
                             <Icon size={15} className="text-white" />
                           </div>
@@ -491,7 +491,7 @@ export default function DashboardPage() {
                           href={`/dashboard/events/${event.id}`}
                           className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-100 transition-colors group"
                         >
-                          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex flex-col items-center justify-center shrink-0 shadow-sm">
+                          <div className="w-9 h-9 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex flex-col items-center justify-center shrink-0 shadow-sm">
                             <span className="text-white text-xs font-bold leading-none">
                               {String(d).padStart(2, "0")}
                             </span>

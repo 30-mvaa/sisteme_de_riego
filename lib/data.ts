@@ -26,8 +26,11 @@ export const AUTH_USERS: AuthUser[] = [
   },
 ];
 
-// The superadmin id — only this account can manage access accounts
+/** @deprecated Los ids en BD son UUID; usa `SUPERADMIN_USERNAME`. */
 export const SUPERADMIN_ID = "auth-1";
+
+/** Cuenta que puede gestionar usuarios en /dashboard/access (debe coincidir con `username` en BD). */
+export const SUPERADMIN_USERNAME = "admin";
 
 export const INITIAL_MEMBERS: Member[] = [
   {

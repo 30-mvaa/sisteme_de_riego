@@ -19,7 +19,7 @@ import type {
   PaymentConcept,
   Role,
 } from "./types";
-import { SUPERADMIN_ID } from "./data";
+import { SUPERADMIN_USERNAME } from "./data";
 
 // ─── Context type ─────────────────────────────────────────────────────────────
 
@@ -36,7 +36,10 @@ interface AppContextType {
   isSuperAdmin: boolean;
 
   // Auth
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (
+    username: string,
+    password: string,
+  ) => Promise<{ ok: boolean; error?: string }>;
   logout: () => void;
 
   // Access management (superadmin only)
@@ -167,11 +170,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ── Derived ────────────────────────────────────────────────────────────────
-  const isSuperAdmin = currentUser?.id === SUPERADMIN_ID;
+  const isSuperAdmin = currentUser?.username === SUPERADMIN_USERNAME;
 
   // ── Auth ───────────────────────────────────────────────────────────────────
   const login = useCallback(
-    async (username: string, password: string): Promise<boolean> => {
+    async (
+      username: string,
+      password: string,
+    ): Promise<{ ok: boolean; error?: string }> => {
       try {
         const res = await fetch("/api/auth", {
           method: "POST",
@@ -179,14 +185,30 @@ export function AppProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ username, password }),
         });
 
-        if (!res.ok) return false;
+        const data = (await res.json()) as AuthUser & { error?: string };
 
-        const user: AuthUser = await res.json();
+        if (!res.ok) {
+          return {
+            ok: false,
+            error:
+              data.error ??
+              "Usuario o contraseña incorrectos.",
+          };
+        }
+
+        const user: AuthUser = {
+          id: String(data.id),
+          username: data.username,
+          name: data.name,
+          role: data.role as Role,
+          enabled: data.enabled,
+          password: "",
+        };
         setCurrentUser(user);
         localStorage.setItem("pm_current_user", JSON.stringify(user));
-        return true;
+        return { ok: true };
       } catch {
-        return false;
+        return { ok: false, error: "Error de conexión." };
       }
     },
     [],
@@ -219,7 +241,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (res.status === 409) return "El nombre de usuario ya existe.";
         if (!res.ok) return "Error al crear el usuario.";
 
-        const newUser: AuthUser = await res.json();
+        const raw = await res.json();
+        const newUser: AuthUser = {
+          ...raw,
+          id: String(raw.id),
+          password: "",
+        };
         setAuthUsers((prev) => [...prev, newUser]);
         return null;
       } catch {
@@ -241,7 +268,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (res.status === 409) return "El nombre de usuario ya existe.";
         if (!res.ok) return "Error al actualizar el usuario.";
 
-        const updated: AuthUser = await res.json();
+        const raw = await res.json();
+        const updated: AuthUser = {
+          ...raw,
+          id: String(raw.id),
+          password: "",
+        };
         setAuthUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
         if (currentUser?.id === id) {
           setCurrentUser(updated);
@@ -259,7 +291,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch(`/api/access/${id}`, { method: "PATCH" });
       if (!res.ok) return;
-      const updated: AuthUser = await res.json();
+      const raw = await res.json();
+      const updated: AuthUser = {
+        ...raw,
+        id: String(raw.id),
+        password: "",
+      };
       setAuthUsers((prev) => prev.map((u) => (u.id === id ? updated : u)));
     } catch {
       console.error("Error al toggle usuario");

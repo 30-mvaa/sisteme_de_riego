@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/lib/app-context";
-import { SUPERADMIN_ID } from "@/lib/data";
+import { SUPERADMIN_USERNAME } from "@/lib/data";
 import {
   LayoutDashboard,
   Users,
@@ -87,7 +87,8 @@ export function SidebarNav() {
   };
 
   const visibleItems = NAV_ITEMS.filter((item) => {
-    if (item.superAdminOnly) return currentUser?.id === SUPERADMIN_ID;
+    if (item.superAdminOnly)
+      return currentUser?.username === SUPERADMIN_USERNAME;
     if (item.adminOnly) return currentUser?.role === "admin";
     return true;
   });

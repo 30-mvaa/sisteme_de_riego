@@ -108,7 +108,7 @@ export function MonthlyPaymentDialog({
     setErrors({});
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) {
@@ -119,7 +119,7 @@ export function MonthlyPaymentDialog({
     const member = members.find((m) => m.id === memberId)!;
     const count = selectedMonthlyIds.length;
 
-    const payment = addPayment({
+    const payment = await addPayment({
       memberId,
       memberName: member.name,
       concept: 'monthly',
