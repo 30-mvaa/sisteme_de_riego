@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { createAuditLog, getClientInfo } from "@/lib/audit";
 
 function isPgError(e: unknown): e is { code?: string } {
   return typeof e === "object" && e !== null && "code" in e;
@@ -66,6 +67,15 @@ export async function POST(request: Request) {
     const user = result.rows[0] as AuthUser;
 
     if (!user || user.enabled === false) {
+      const clientInfo = getClientInfo(request);
+      await createAuditLog({
+        userId: "unknown",
+        username: username,
+        action: "LOGIN_FAILED",
+        entityType: "user",
+        details: { reason: "user_not_found_or_disabled" },
+        ...clientInfo,
+      });
       return NextResponse.json(
         { error: "Credenciales incorrectas o cuenta deshabilitada" },
         { status: 401 }
@@ -76,6 +86,16 @@ export async function POST(request: Request) {
     const passwordMatch = await bcrypt.compare(password, user.password);
 
     if (!passwordMatch) {
+      const clientInfo = getClientInfo(request);
+      await createAuditLog({
+        userId: String(user.id),
+        username: user.username,
+        action: "LOGIN_FAILED",
+        entityType: "user",
+        entityId: String(user.id),
+        details: { reason: "invalid_password" },
+        ...clientInfo,
+      });
       return NextResponse.json(
         { error: "Credenciales incorrectas o cuenta deshabilitada" },
         { status: 401 }
@@ -84,6 +104,17 @@ export async function POST(request: Request) {
 
     // 🔹 Eliminar password antes de responder
     const { password: _password, ...userWithoutPassword } = user;
+
+    // 🔹 Registrar en auditoría
+    const clientInfo = getClientInfo(request);
+    await createAuditLog({
+      userId: String(user.id),
+      username: user.username,
+      action: "LOGIN",
+      entityType: "user",
+      entityId: String(user.id),
+      ...clientInfo,
+    });
 
     return NextResponse.json(userWithoutPassword, { status: 200 });
   } catch (error) {

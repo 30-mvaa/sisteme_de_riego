@@ -14,6 +14,7 @@ import {
   Droplets,
   ChevronRight,
   KeyRound,
+  Activity,
 } from "lucide-react";
 
 interface NavItem {
@@ -73,6 +74,14 @@ const NAV_ITEMS: NavItem[] = [
     superAdminOnly: true,
     color: "text-rose-400",
     bg: "bg-rose-500/20",
+  },
+  {
+    href: "/dashboard/audit",
+    label: "Auditoría",
+    icon: Activity,
+    superAdminOnly: true,
+    color: "text-red-400",
+    bg: "bg-red-500/20",
   },
 ];
 

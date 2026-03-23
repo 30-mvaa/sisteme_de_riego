@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import pool from "@/lib/db";
+import { createAuditLog, getClientInfo } from "@/lib/audit";
 
 // 🔹 Tipo BD
 type UserRow = {
@@ -96,6 +97,18 @@ export async function POST(request: NextRequest) {
     );
 
     const user = result.rows[0] as UserRow;
+
+    // 🔹 Registrar en auditoría
+    const clientInfo = getClientInfo(request);
+    await createAuditLog({
+      userId: "system",
+      username: "Sistema",
+      action: "CREATE",
+      entityType: "user",
+      entityId: String(user.id),
+      details: { username: user.username, name: user.name, role: user.role },
+      ...clientInfo,
+    });
 
     return NextResponse.json(
       {
