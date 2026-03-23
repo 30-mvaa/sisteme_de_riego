@@ -1,0 +1,1 @@
+python manage.py migrate auth 004_add_email_to_auth_users

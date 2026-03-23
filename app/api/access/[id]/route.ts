@@ -7,6 +7,7 @@ type UserRow = {
   id: string;
   username: string;
   name: string;
+  email: string | null;
   role: string;
   enabled: boolean;
   created_at: string;
@@ -21,7 +22,7 @@ export async function PUT(
     const { id } = await params;
     const body = await request.json();
 
-    const { username, password, name, role, enabled } = body;
+    const { username, password, name, email, role, enabled } = body;
 
     // 🔹 validar username único
     if (username) {
@@ -33,6 +34,21 @@ export async function PUT(
       if (existing.rows.length > 0) {
         return NextResponse.json(
           { error: "El nombre de usuario ya está en uso." },
+          { status: 409 }
+        );
+      }
+    }
+
+    // 🔹 validar email único (si se proporciona)
+    if (email) {
+      const existingEmail = await pool.query(
+        "SELECT id FROM auth_users WHERE email = $1 AND id::text <> $2 LIMIT 1",
+        [email, id],
+      );
+
+      if (existingEmail.rows.length > 0) {
+        return NextResponse.json(
+          { error: "El correo electrónico ya está en uso." },
           { status: 409 }
         );
       }
@@ -50,6 +66,10 @@ export async function PUT(
     if (name) {
       fields.push(`name = $${index++}`);
       values.push(name);
+    }
+    if (email !== undefined) {
+      fields.push(`email = $${index++}`);
+      values.push(email || null);
     }
     if (role) {
       fields.push(`role = $${index++}`);
@@ -78,7 +98,7 @@ export async function PUT(
       `UPDATE auth_users 
        SET ${fields.join(", ")}
        WHERE id::text = $${index}
-       RETURNING id, username, name, role, enabled, created_at`,
+       RETURNING id, username, name, email, role, enabled, created_at`,
       values,
     );
 
@@ -88,6 +108,7 @@ export async function PUT(
       id: String(user.id),
       username: user.username,
       name: user.name,
+      email: user.email,
       role: user.role,
       enabled: user.enabled,
       createdAt: user.created_at,
@@ -127,7 +148,7 @@ export async function PATCH(
       `UPDATE auth_users 
        SET enabled = $1
        WHERE id::text = $2
-       RETURNING id, username, name, role, enabled, created_at`,
+       RETURNING id, username, name, email, role, enabled, created_at`,
       [!user.enabled, id],
     );
 
@@ -137,6 +158,7 @@ export async function PATCH(
       id: String(updated.id),
       username: updated.username,
       name: updated.name,
+      email: updated.email,
       role: updated.role,
       enabled: updated.enabled,
       createdAt: updated.created_at,

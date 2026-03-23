@@ -19,7 +19,12 @@ if (!url) {
   process.exit(1);
 }
 
-const files = ["001_init.sql", "002_seed.sql"];
+const files = [
+  "001_init.sql",
+  "002_seed.sql",
+  "003_password_resets.sql",
+  "004_add_email_to_auth_users.sql",
+];
 const client = new pg.Client({ connectionString: url });
 
 try {

@@ -4,6 +4,7 @@ export interface AuthUser {
   id: string;
   username: string;
   password: string;
+  email?: string;
   role: Role;
   name: string;
   enabled: boolean;

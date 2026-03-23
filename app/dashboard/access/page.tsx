@@ -52,6 +52,7 @@ interface FormState {
   username: string;
   password: string;
   name: string;
+  email: string;
   role: Role;
 }
 
@@ -59,6 +60,7 @@ const EMPTY_FORM: FormState = {
   username: "",
   password: "",
   name: "",
+  email: "",
   role: "admin",
 };
 
@@ -126,6 +128,7 @@ export default function AccessPage() {
       username: user.username,
       password: user.password,
       name: user.name,
+      email: user.email || "",
       role: user.role,
     });
     setErrors({});
@@ -154,6 +157,7 @@ export default function AccessPage() {
     const data: Omit<AuthUser, "id"> = {
       username: form.username.trim(),
       password: form.password || (editingUser?.password ?? ""),
+      email: form.email.trim() || undefined,
       name: form.name.trim(),
       role: form.role,
       enabled: editingUser?.enabled ?? true,
@@ -464,6 +468,23 @@ export default function AccessPage() {
               {errors.username && (
                 <p className="text-xs text-destructive">{errors.username}</p>
               )}
+            </div>
+
+            {/* Email */}
+            <div className="space-y-1.5">
+              <Label htmlFor="acc-email">Correo electrónico</Label>
+              <Input
+                id="acc-email"
+                type="email"
+                placeholder="Ej: usuario@correo.com"
+                value={form.email}
+                onChange={(e) => {
+                  setForm((p) => ({ ...p, email: e.target.value }));
+                }}
+              />
+              <p className="text-xs text-muted-foreground">
+                Requerido para recuperación de contraseña
+              </p>
             </div>
 
             {/* Password */}

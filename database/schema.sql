@@ -174,3 +174,16 @@ CREATE POLICY "Enable delete access for all users" ON payment_monthly_charges FO
 CREATE POLICY "Enable read access for all users" ON payment_event_attendances FOR SELECT USING (true);
 CREATE POLICY "Enable insert access for all users" ON payment_event_attendances FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable delete access for all users" ON payment_event_attendances FOR DELETE USING (true);
+
+-- Password reset tokens
+CREATE TABLE IF NOT EXISTS password_resets (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    email VARCHAR(100) NOT NULL,
+    token VARCHAR(255) NOT NULL,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used BOOLEAN DEFAULT false,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email);
+CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token);
