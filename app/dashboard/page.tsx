@@ -16,6 +16,7 @@ import {
   Clock,
   Droplets,
   BarChart3,
+  Download,
 } from "lucide-react";
 
 const CONCEPT_COLORS: Record<string, string> = {
@@ -133,17 +134,30 @@ export default function DashboardPage() {
           </div>
 
           {isAdmin && (
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-5 py-3">
-              <TrendingUp size={20} className="text-white/80" />
-              <div>
-                <p className="text-white/70 text-xs">
-                  Ingreso mensual esperado
-                </p>
-                <p className="text-white font-bold text-lg tabular-nums">
-                  ${expectedMonthly.toFixed(2)}
-                </p>
+            <>
+              <div className="flex items-center gap-3 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-5 py-3">
+                <TrendingUp size={20} className="text-white/80" />
+                <div>
+                  <p className="text-white/70 text-xs">
+                    Ingreso mensual esperado
+                  </p>
+                  <p className="text-white font-bold text-lg tabular-nums">
+                    ${expectedMonthly.toFixed(2)}
+                  </p>
+                </div>
               </div>
-            </div>
+              <a
+                href="/api/backup"
+                download
+                className="flex items-center gap-2 bg-white/10 backdrop-blur border border-white/20 rounded-2xl px-4 py-3 hover:bg-white/20 transition-all text-white/80 hover:text-white"
+                title="Descargar respaldo (usuarios, cuotas, eventos)"
+              >
+                <Download size={16} />
+                <span className="text-sm font-medium hidden sm:inline">
+                  Respaldo
+                </span>
+              </a>
+            </>
           )}
         </div>
       </div>
