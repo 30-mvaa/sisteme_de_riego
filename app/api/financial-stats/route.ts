@@ -40,19 +40,19 @@ export async function GET() {
          ), 'YYYY-MM') AS month
        ),
        income AS (
-         SELECT to_char(date::date, 'YYYY-MM') AS month,
-                COALESCE(SUM(amount), 0) AS total
-         FROM payments
-         WHERE date >= date_trunc('month', now()) - interval '11 months'
-         GROUP BY 1
-       ),
-       expenses AS (
-         SELECT to_char(date::date, 'YYYY-MM') AS month,
-                COALESCE(SUM(amount), 0) AS total
-         FROM expenses
-         WHERE date >= date_trunc('month', now()) - interval '11 months'
-         GROUP BY 1
-       )
+          SELECT to_char(date::date, 'YYYY-MM') AS month,
+                 COALESCE(SUM(amount), 0) AS total
+          FROM payments
+          WHERE date::date >= date_trunc('month', now()) - interval '11 months'
+          GROUP BY 1
+        ),
+        expenses AS (
+          SELECT to_char(date::date, 'YYYY-MM') AS month,
+                 COALESCE(SUM(amount), 0) AS total
+          FROM expenses
+          WHERE date::date >= date_trunc('month', now()) - interval '11 months'
+          GROUP BY 1
+        )
        SELECT m.month,
               COALESCE(i.total, 0) AS income,
               COALESCE(e.total, 0) AS expenses

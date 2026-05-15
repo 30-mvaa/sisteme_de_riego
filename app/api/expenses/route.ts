@@ -5,7 +5,7 @@ import { expenseFromRow } from "@/lib/db-mappers";
 export async function GET() {
   try {
     const result = await pool.query(
-      "SELECT * FROM expenses_v ORDER BY date DESC, created_at DESC"
+      'SELECT * FROM expenses_v ORDER BY date DESC, "createdAt" DESC'
     );
     return NextResponse.json(
       result.rows.map((r: Record<string, unknown>) => expenseFromRow(r)),
