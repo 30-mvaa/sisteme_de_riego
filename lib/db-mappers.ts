@@ -1,4 +1,4 @@
-import type { Member, Payment, PaymentConcept } from "./types";
+import type { Expense, ExpenseCategory, Member, Payment, PaymentConcept } from "./types";
 
 /** Fila típica de `members` (snake_case desde pg). */
 export function memberFromRow(row: Record<string, unknown>): Member {
@@ -14,6 +14,21 @@ export function memberFromRow(row: Record<string, unknown>): Member {
       description: String(row.description),
     },
     createdAt: String(row.created_at),
+  };
+}
+
+/** Fila típica de `expenses_v` (snake_case desde pg). */
+export function expenseFromRow(row: Record<string, unknown>): Expense {
+  return {
+    id: String(row.id),
+    description: String(row.description),
+    category: row.category as ExpenseCategory,
+    amount: Number(row.amount),
+    date: String(row.date),
+    notes: row.notes ? String(row.notes) : undefined,
+    createdBy: row.createdBy ? String(row.createdBy) : undefined,
+    createdAt: String(row.createdAt),
+    updatedAt: String(row.updatedAt),
   };
 }
 

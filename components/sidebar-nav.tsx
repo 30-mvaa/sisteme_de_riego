@@ -15,6 +15,7 @@ import {
   ChevronRight,
   KeyRound,
   Activity,
+  PiggyBank,
 } from "lucide-react";
 
 interface NavItem {
@@ -66,6 +67,14 @@ const NAV_ITEMS: NavItem[] = [
     adminOnly: true,
     color: "text-amber-400",
     bg: "bg-amber-500/20",
+  },
+  {
+    href: "/dashboard/finanzas",
+    label: "Finanzas",
+    icon: PiggyBank,
+    adminOnly: true,
+    color: "text-green-400",
+    bg: "bg-green-500/20",
   },
   {
     href: "/dashboard/access",

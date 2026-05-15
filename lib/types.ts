@@ -93,6 +93,53 @@ export interface Payment {
   attendanceIds?: string[];
 }
 
+// ─── Gastos ──────────────────────────────────────────────────────────────────
+
+export type ExpenseCategory =
+  | "administrativo"
+  | "operativo"
+  | "mantenimiento"
+  | "insumos"
+  | "servicios"
+  | "otro";
+
+export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
+  administrativo: "Administrativo",
+  operativo: "Operativo",
+  mantenimiento: "Mantenimiento",
+  insumos: "Insumos",
+  servicios: "Servicios",
+  otro: "Otro",
+};
+
+export interface Expense {
+  id: string;
+  description: string;
+  category: ExpenseCategory;
+  amount: number;
+  date: string;
+  notes?: string;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Estadísticas Financieras ────────────────────────────────────────────────
+
+export interface FinancialStats {
+  totalIncome: number;
+  totalExpenses: number;
+  balance: number;
+  incomeByConcept: { concept: string; total: number }[];
+  expensesByCategory: { category: string; total: number }[];
+  monthlyStats: {
+    month: string;
+    income: number;
+    expenses: number;
+    balance: number;
+  }[];
+}
+
 // Calculated debt summary for a member
 export interface MemberDebtSummary {
   memberId: string;
