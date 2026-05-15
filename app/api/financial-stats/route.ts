@@ -3,35 +3,41 @@ import pool from "@/lib/db";
 import type { FinancialStats } from "@/lib/types";
 
 export async function GET() {
+  // Cada consulta se ejecuta por separado para que una falla no rompa las demás
+  let totalIncome = 0;
+  let totalExpenses = 0;
+  let incomeByConcept: { concept: string; total: number }[] = [];
+  let expensesByCategory: { category: string; total: number }[] = [];
+  let monthlyStats: { month: string; income: number; expenses: number; balance: number }[] = [];
+
   try {
-    // ── Total income from payments ──
-    const incomeRes = await pool.query(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM payments"
-    );
+    const r = await pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM payments");
+    totalIncome = Number(r.rows[0].total);
+  } catch (e) { console.error("income query error:", e); }
 
-    // ── Total expenses ──
-    const expenseRes = await pool.query(
-      "SELECT COALESCE(SUM(amount), 0) as total FROM expenses"
-    );
+  try {
+    const r = await pool.query("SELECT COALESCE(SUM(amount), 0) as total FROM expenses");
+    totalExpenses = Number(r.rows[0].total);
+  } catch (e) { console.error("expenses total query error:", e); }
 
-    // ── Income by concept ──
-    const incomeByConceptRes = await pool.query(
+  try {
+    const r = await pool.query(
       `SELECT concept, COALESCE(SUM(amount), 0) as total
-       FROM payments
-       GROUP BY concept
-       ORDER BY total DESC`
+       FROM payments GROUP BY concept ORDER BY total DESC`
     );
+    incomeByConcept = r.rows.map((r) => ({ concept: String(r.concept), total: Number(r.total) }));
+  } catch (e) { console.error("income by concept error:", e); }
 
-    // ── Expenses by category ──
-    const expensesByCategoryRes = await pool.query(
+  try {
+    const r = await pool.query(
       `SELECT category, COALESCE(SUM(amount), 0) as total
-       FROM expenses
-       GROUP BY category
-       ORDER BY total DESC`
+       FROM expenses GROUP BY category ORDER BY total DESC`
     );
+    expensesByCategory = r.rows.map((r) => ({ category: String(r.category), total: Number(r.total) }));
+  } catch (e) { console.error("expenses by category error:", e); }
 
-    // ── Monthly stats (last 12 months) ──
-    const monthlyRes = await pool.query(
+  try {
+    const r = await pool.query(
       `WITH months AS (
          SELECT to_char(generate_series(
            date_trunc('month', now()) - interval '11 months',
@@ -61,35 +67,24 @@ export async function GET() {
        LEFT JOIN expenses e ON m.month = e.month
        ORDER BY m.month ASC`
     );
+    monthlyStats = r.rows.map((r) => ({
+      month: String(r.month),
+      income: Number(r.income),
+      expenses: Number(r.expenses),
+      balance: Number(r.income) - Number(r.expenses),
+    }));
+  } catch (e) { console.error("monthly stats error:", e); }
 
-    const totalIncome = Number(incomeRes.rows[0].total);
-    const totalExpenses = Number(expenseRes.rows[0].total);
+  const stats: FinancialStats = {
+    totalIncome,
+    totalExpenses,
+    balance: totalIncome - totalExpenses,
+    incomeByConcept,
+    expensesByCategory,
+    monthlyStats,
+  };
 
-    const stats: FinancialStats = {
-      totalIncome,
-      totalExpenses,
-      balance: totalIncome - totalExpenses,
-      incomeByConcept: incomeByConceptRes.rows.map((r) => ({
-        concept: String(r.concept),
-        total: Number(r.total),
-      })),
-      expensesByCategory: expensesByCategoryRes.rows.map((r) => ({
-        category: String(r.category),
-        total: Number(r.total),
-      })),
-      monthlyStats: monthlyRes.rows.map((r) => ({
-        month: String(r.month),
-        income: Number(r.income),
-        expenses: Number(r.expenses),
-        balance: Number(r.income) - Number(r.expenses),
-      })),
-    };
-
-    return NextResponse.json(stats, {
-      headers: { "Cache-Control": "no-store, must-revalidate" },
-    });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Error interno" }, { status: 500 });
-  }
+  return NextResponse.json(stats, {
+    headers: { "Cache-Control": "no-store, must-revalidate" },
+  });
 }
