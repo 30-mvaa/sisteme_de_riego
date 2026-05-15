@@ -43,7 +43,7 @@ const CATEGORY_COLORS: Record<ExpenseCategory, string> = {
 };
 
 export default function FinanzasPage() {
-  const { currentUser } = useApp();
+  const { currentUser, payments } = useApp();
   const [stats, setStats] = useState<FinancialStats | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
@@ -317,6 +317,62 @@ export default function FinanzasPage() {
           </div>
         </div>
       )}
+
+      {/* Income List */}
+      <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <DollarSign size={16} className="text-emerald-500" />
+            Ingresos Registrados
+          </h2>
+          <span className="text-xs text-gray-400">{payments.length} registro(s)</span>
+        </div>
+
+        {payments.length === 0 ? (
+          <p className="text-sm text-gray-400">No hay ingresos registrados</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100">
+                  <th className="text-left py-2 px-2 text-gray-500 font-medium">Fecha</th>
+                  <th className="text-left py-2 px-2 text-gray-500 font-medium">Miembro</th>
+                  <th className="text-left py-2 px-2 text-gray-500 font-medium">Concepto</th>
+                  <th className="text-left py-2 px-2 text-gray-500 font-medium">Descripción</th>
+                  <th className="text-right py-2 px-2 text-gray-500 font-medium">Monto</th>
+                  <th className="text-left py-2 px-2 text-gray-500 font-medium">Recibo</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...payments]
+                  .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                  .map((p) => (
+                    <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+                      <td className="py-2.5 px-2 text-gray-600 whitespace-nowrap">{p.date}</td>
+                      <td className="py-2.5 px-2 text-gray-900 font-medium">{p.memberName}</td>
+                      <td className="py-2.5 px-2">
+                        <span
+                          className={`px-2 py-0.5 rounded-lg text-xs font-medium ${
+                            CONCEPT_COLORS[p.concept] || "bg-gray-500/20 text-gray-400"
+                          }`}
+                        >
+                          {CONCEPT_LABELS_MAP[p.concept] || p.concept}
+                        </span>
+                      </td>
+                      <td className="py-2.5 px-2 text-gray-600">{p.description}</td>
+                      <td className="py-2.5 px-2 text-right font-medium text-emerald-600">
+                        {formatMoney(p.amount)}
+                      </td>
+                      <td className="py-2.5 px-2 text-xs text-gray-400 font-mono">
+                        {p.receiptNumber}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
 
       {/* Expenses List */}
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
