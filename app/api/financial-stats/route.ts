@@ -85,7 +85,9 @@ export async function GET() {
       })),
     };
 
-    return NextResponse.json(stats);
+    return NextResponse.json(stats, {
+      headers: { "Cache-Control": "no-store, must-revalidate" },
+    });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Error interno" }, { status: 500 });

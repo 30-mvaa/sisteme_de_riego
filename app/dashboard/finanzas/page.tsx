@@ -56,12 +56,16 @@ export default function FinanzasPage() {
   const [formDate, setFormDate] = useState(new Date().toISOString().slice(0, 10));
   const [formNotes, setFormNotes] = useState("");
   const [formError, setFormError] = useState("");
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const fetchData = useCallback(async () => {
+    setFetchError(null);
+    const ts = Date.now();
     const [statsRes, expensesRes] = await Promise.all([
-      fetch("/api/financial-stats"),
-      fetch("/api/expenses"),
+      fetch(`/api/financial-stats?_=${ts}`),
+      fetch(`/api/expenses?_=${ts}`),
     ]);
+    if (!statsRes.ok) setFetchError("Error al cargar estadísticas financieras");
     if (statsRes.ok) setStats(await statsRes.json());
     if (expensesRes.ok) setExpenses(await expensesRes.json());
     setLoading(false);
@@ -136,6 +140,11 @@ export default function FinanzasPage() {
         <p className="text-sm text-gray-500 mt-1">
           Resumen de ingresos (cuotas, reuniones, multas) y gastos
         </p>
+        {fetchError && (
+          <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg mt-2">
+            {fetchError}
+          </p>
+        )}
       </div>
 
       {/* Summary Cards */}
