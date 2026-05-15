@@ -101,7 +101,7 @@ export function SidebarNav() {
 
   const handleLogout = () => {
     logout();
-    router.push("/login");
+    router.push("/");
   };
 
   const visibleItems = NAV_ITEMS.filter((item) => {
