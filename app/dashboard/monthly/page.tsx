@@ -57,7 +57,6 @@ export default function MonthlyChargesPage() {
   const {
     members,
     monthlyCharges,
-    generateMonthlyCharges,
     getUnpaidMonthlyCharges,
     addPayment,
     ratePerHectare,
@@ -175,11 +174,10 @@ export default function MonthlyChargesPage() {
         return;
       }
       setGenerateMsg({ ok: true, text: `${data.generated} cuota(s) generada(s) para ${selectedMonth}` });
-      setTimeout(async () => {
+      setTimeout(() => {
         setGenerateDialogOpen(false);
         setGenerateMsg(null);
-        // Recargar cuotas sin recargar toda la página
-        await generateMonthlyCharges(selectedMonth);
+        window.location.reload();
       }, 1500);
     } catch {
       setGenerateMsg({ ok: false, text: "Error de conexión al generar cuotas" });
