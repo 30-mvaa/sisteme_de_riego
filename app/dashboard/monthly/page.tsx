@@ -325,7 +325,18 @@ export default function MonthlyChargesPage() {
             }}
             className="gap-2 text-red-500 border-red-200 hover:bg-red-50"
           >
-            Limpiar
+            Limpiar Cuotas
+          </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              if (!confirm("¿Limpiar TODOS los pagos? Esto también resetea cuotas y multas pagadas.")) return;
+              await fetch("/api/payments", { method: "DELETE" });
+              window.location.reload();
+            }}
+            className="gap-2 text-red-600 border-red-300 hover:bg-red-50"
+          >
+            Reset Pagos
           </Button>
         </div>
       </div>
