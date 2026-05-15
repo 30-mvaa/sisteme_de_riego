@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const user = userResult.rows[0];
 
     const token = randomBytes(32).toString("hex");
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + 20 * 60 * 1000);
 
     await pool.query(
       "INSERT INTO password_resets (email, token, expires_at) VALUES ($1, $2, $3)",

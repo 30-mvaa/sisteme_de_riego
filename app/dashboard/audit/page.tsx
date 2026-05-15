@@ -465,15 +465,82 @@ export default function AuditPage() {
                   <p className="text-muted-foreground">Navegador</p>
                   <p className="text-xs truncate">{selectedLog.userAgent || "No disponible"}</p>
                 </div>
-                {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
-                  <div className="col-span-2">
-                    <p className="text-muted-foreground">Detalles Adicionales</p>
+              </div>
+
+              {/* Detalles de cambios */}
+              {selectedLog.details && Object.keys(selectedLog.details).length > 0 && (
+                <div className="border-t pt-4 mt-4">
+                  <p className="text-sm font-semibold text-foreground mb-3">
+                    Detalles de la Acción
+                  </p>
+                  
+                  {/* Si hay información del usuario editado */}
+                  {typeof selectedLog.details.usuarioEditado === 'string' && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-3">
+                      <p className="text-xs font-semibold text-amber-800 mb-1">
+                        Usuario modificado:
+                      </p>
+                      <p className="text-sm text-amber-900 font-medium">
+                        {selectedLog.details.usuarioEditado as string}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Si hay información del usuario eliminado */}
+                  {(() => {
+                    const eliminado = selectedLog.details.usuarioEliminado;
+                    if (typeof eliminado === 'object' && eliminado !== null) {
+                      const data = eliminado as Record<string, string>;
+                      return (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mb-3">
+                          <p className="text-xs font-semibold text-red-800 mb-2">
+                            Usuario eliminado:
+                          </p>
+                          <div className="text-sm text-red-900 space-y-1">
+                            <p><span className="font-medium">Username:</span> {data.username || ""}</p>
+                            <p><span className="font-medium">Nombre:</span> {data.nombre || ""}</p>
+                            <p><span className="font-medium">Email:</span> {data.email || "N/A"}</p>
+                            <p><span className="font-medium">Rol:</span> {data.rol || ""}</p>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
+                  {/* Si hay cambios específicos */}
+                  {selectedLog.details.cambios && Array.isArray(selectedLog.details.cambios) && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-blue-800 mb-2">
+                        Cambios realizados:
+                      </p>
+                      <div className="space-y-2">
+                        {(selectedLog.details.cambios as Array<{ field: string; oldValue: string; newValue: string }>).map((change, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-sm">
+                            <span className="text-blue-700 font-medium capitalize">
+                              {change.field}:
+                            </span>
+                            <span className="text-red-600 line-through">
+                              {String(change.oldValue)}
+                            </span>
+                            <span className="text-blue-400">→</span>
+                            <span className="text-green-600 font-medium">
+                              {String(change.newValue)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Otros detalles */}
+                  {(!selectedLog.details.cambios && !selectedLog.details.usuarioEditado && !selectedLog.details.usuarioEliminado) && (
                     <pre className="font-mono text-xs bg-gray-100 p-3 rounded overflow-x-auto">
                       {JSON.stringify(selectedLog.details, null, 2)}
                     </pre>
-                  </div>
-                )}
-              </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
