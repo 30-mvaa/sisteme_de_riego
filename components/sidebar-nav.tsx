@@ -111,10 +111,6 @@ export function SidebarNav() {
     return true;
   });
 
-  console.log("[Sidebar] currentUser:", currentUser);
-  console.log("[Sidebar] NAV_ITEMS:", NAV_ITEMS.map(i => i.label));
-  console.log("[Sidebar] visibleItems:", visibleItems.map(i => i.label));
-
   return (
     <aside
       className="w-60 min-h-screen flex flex-col shrink-0"
