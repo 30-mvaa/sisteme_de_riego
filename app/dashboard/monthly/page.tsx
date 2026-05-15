@@ -75,6 +75,8 @@ export default function MonthlyChargesPage() {
 
   // ── Dialogs ───────────────────────────────────────────────────────────────────
   const [generateDialogOpen, setGenerateDialogOpen] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateMsg, setGenerateMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -151,9 +153,38 @@ export default function MonthlyChargesPage() {
     selectedChargeIds.length === panelUnpaidCharges.length;
 
   // ── Handlers ──────────────────────────────────────────────────────────────────
-  const handleGenerate = () => {
-    generateMonthlyCharges(selectedMonth);
-    setGenerateDialogOpen(false);
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setGenerateMsg(null);
+    try {
+      const res = await fetch("/api/monthly-charges", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          month: selectedMonth,
+          members: members.map((m) => ({
+            id: m.id,
+            hectares: m.land.hectares,
+          })),
+          ratePerHectare,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setGenerateMsg({ ok: false, text: data.error || "Error al generar cuotas" });
+        return;
+      }
+      setGenerateMsg({ ok: true, text: `${data.generated} cuota(s) generada(s) para ${selectedMonth}` });
+      setTimeout(() => {
+        setGenerateDialogOpen(false);
+        setGenerateMsg(null);
+        window.location.reload();
+      }, 1500);
+    } catch {
+      setGenerateMsg({ ok: false, text: "Error de conexión al generar cuotas" });
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const toggleMonthCollapse = (month: string) => {
@@ -888,16 +919,37 @@ export default function MonthlyChargesPage() {
               </div>
             </div>
           </div>
+          {generateMsg && (
+            <div
+              className={`mx-6 mb-2 px-3 py-2 rounded-lg text-sm ${
+                generateMsg.ok
+                  ? "bg-green-100 text-green-700 border border-green-200"
+                  : "bg-red-100 text-red-700 border border-red-200"
+              }`}
+            >
+              {generateMsg.text}
+            </div>
+          )}
           <DialogFooter>
             <Button
               variant="outline"
-              onClick={() => setGenerateDialogOpen(false)}
+              onClick={() => {
+                setGenerateDialogOpen(false);
+                setGenerateMsg(null);
+              }}
+              disabled={generating}
             >
               Cancelar
             </Button>
-            <Button onClick={handleGenerate}>
-              <CalendarPlus size={15} className="mr-2" />
-              Generar Cuotas
+            <Button onClick={handleGenerate} disabled={generating}>
+              {generating ? (
+                <>Generando...</>
+              ) : (
+                <>
+                  <CalendarPlus size={15} className="mr-2" />
+                  Generar Cuotas
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
