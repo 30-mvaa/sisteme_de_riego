@@ -16,6 +16,11 @@ type AuditLogRow = {
 
 export async function GET(request: NextRequest) {
   try {
+    // Auto-limpiar registros mayores a 30 días
+    await pool.query(
+      "DELETE FROM audit_logs WHERE created_at < now() - interval '30 days'"
+    );
+
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "50");
