@@ -175,10 +175,11 @@ export default function MonthlyChargesPage() {
         return;
       }
       setGenerateMsg({ ok: true, text: `${data.generated} cuota(s) generada(s) para ${selectedMonth}` });
-      setTimeout(() => {
+      setTimeout(async () => {
         setGenerateDialogOpen(false);
         setGenerateMsg(null);
-        window.location.reload();
+        // Recargar cuotas sin recargar toda la página
+        await generateMonthlyCharges(selectedMonth);
       }, 1500);
     } catch {
       setGenerateMsg({ ok: false, text: "Error de conexión al generar cuotas" });

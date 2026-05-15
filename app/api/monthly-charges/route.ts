@@ -36,7 +36,9 @@ export async function GET() {
 
     const charges = (result.rows as ChargeRow[]).map(transformCharge);
 
-    return NextResponse.json(charges);
+    return NextResponse.json(charges, {
+      headers: { "Cache-Control": "no-store, must-revalidate" },
+    });
   } catch (error) {
     console.error("[GET /api/monthly-charges]", error);
     return NextResponse.json(
