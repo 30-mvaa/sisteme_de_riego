@@ -101,20 +101,3 @@ export async function POST(request: NextRequest) {
     client.release();
   }
 }
-
-// 🔹 DELETE: limpiar todos los pagos
-export async function DELETE() {
-  try {
-    // Resetear referencias en monthly_charges y event_attendances
-    await pool.query("UPDATE monthly_charges SET paid = false, payment_id = NULL");
-    await pool.query("UPDATE event_attendances SET fine_paid = false, fine_payment_id = NULL");
-    const r = await pool.query("DELETE FROM payments");
-    return NextResponse.json({ deleted: r.rowCount });
-  } catch (error) {
-    console.error("[DELETE /api/payments]", error);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
-  }
-}

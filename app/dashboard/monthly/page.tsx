@@ -316,28 +316,7 @@ export default function MonthlyChargesPage() {
             <CalendarPlus size={16} />
             Generar Cuotas
           </Button>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              if (!confirm("¿Limpiar todas las cuotas mensuales?")) return;
-              await fetch("/api/monthly-charges", { method: "DELETE" });
-              window.location.reload();
-            }}
-            className="gap-2 text-red-500 border-red-200 hover:bg-red-50"
-          >
-            Limpiar Cuotas
-          </Button>
-          <Button
-            variant="outline"
-            onClick={async () => {
-              if (!confirm("¿Limpiar TODOS los pagos? Esto también resetea cuotas y multas pagadas.")) return;
-              await fetch("/api/payments", { method: "DELETE" });
-              window.location.reload();
-            }}
-            className="gap-2 text-red-600 border-red-300 hover:bg-red-50"
-          >
-            Reset Pagos
-          </Button>
+
         </div>
       </div>
 
