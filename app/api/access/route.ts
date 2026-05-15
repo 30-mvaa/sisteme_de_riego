@@ -33,7 +33,9 @@ export async function GET() {
       createdAt: u.created_at,
     }));
 
-    return NextResponse.json(users);
+    return NextResponse.json(users, {
+      headers: { "Cache-Control": "no-store, must-revalidate" },
+    });
   } catch (error) {
     console.error("[GET /api/access]", error);
     return NextResponse.json(

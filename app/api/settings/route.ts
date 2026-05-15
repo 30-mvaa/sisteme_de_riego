@@ -7,6 +7,8 @@ export async function GET() {
     const result = await pool.query("SELECT key, value FROM settings");
     return NextResponse.json({
       settings: result.rows,
+    }, {
+      headers: { "Cache-Control": "no-store, must-revalidate" },
     });
   } catch (error) {
     console.error("[GET /api/settings]", error);

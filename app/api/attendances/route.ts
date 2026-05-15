@@ -41,7 +41,9 @@ export async function GET() {
 
     const attendances = (result.rows as AttendanceRow[]).map(transformAttendance);
 
-    return NextResponse.json(attendances);
+    return NextResponse.json(attendances, {
+      headers: { "Cache-Control": "no-store, must-revalidate" },
+    });
   } catch (error) {
     console.error("[GET /api/attendances]", error);
     return NextResponse.json(

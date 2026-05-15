@@ -10,6 +10,7 @@ export async function GET() {
     );
     return NextResponse.json(
       result.rows.map((r: Record<string, unknown>) => paymentFromRow(r)),
+      { headers: { "Cache-Control": "no-store, must-revalidate" } },
     );
   } catch (error) {
     console.error(error);

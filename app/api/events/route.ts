@@ -27,7 +27,9 @@ export async function GET() {
       createdAt: e.created_at,
     }));
 
-    return NextResponse.json(events);
+    return NextResponse.json(events, {
+      headers: { "Cache-Control": "no-store, must-revalidate" },
+    });
   } catch (error) {
     console.error("[GET /api/events]", error);
     return NextResponse.json(

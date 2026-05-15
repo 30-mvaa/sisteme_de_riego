@@ -8,6 +8,7 @@ export async function GET() {
     const result = await pool.query("SELECT * FROM members ORDER BY id ASC");
     return NextResponse.json(
       result.rows.map((r: Record<string, unknown>) => memberFromRow(r)),
+      { headers: { "Cache-Control": "no-store, must-revalidate" } },
     );
   } catch (error) {
     console.error(error);
