@@ -316,6 +316,17 @@ export default function MonthlyChargesPage() {
             <CalendarPlus size={16} />
             Generar Cuotas
           </Button>
+          <Button
+            variant="outline"
+            onClick={async () => {
+              if (!confirm("¿Limpiar todas las cuotas mensuales?")) return;
+              await fetch("/api/monthly-charges", { method: "DELETE" });
+              window.location.reload();
+            }}
+            className="gap-2 text-red-500 border-red-200 hover:bg-red-50"
+          >
+            Limpiar
+          </Button>
         </div>
       </div>
 

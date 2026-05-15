@@ -90,3 +90,17 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// 🔹 DELETE: limpiar todas las cuotas
+export async function DELETE() {
+  try {
+    const r = await pool.query("DELETE FROM monthly_charges");
+    return NextResponse.json({ deleted: r.rowCount });
+  } catch (error) {
+    console.error("[DELETE /api/monthly-charges]", error);
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 }
+    );
+  }
+}
