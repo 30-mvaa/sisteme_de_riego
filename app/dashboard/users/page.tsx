@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useApp } from '@/lib/app-context';
-import type { Member } from '@/lib/types';
+import type { Member, Role } from '@/lib/types';
+import { ADMIN_ROLES } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -56,7 +57,7 @@ export default function UsersPage() {
     );
   }
 
-  if (currentUser?.role !== 'admin') {
+  if (!currentUser?.role || !ADMIN_ROLES.includes(currentUser.role as Role)) {
     return (
       <div className="p-6 flex flex-col items-center justify-center min-h-64 gap-3">
         <UserX size={40} className="text-muted-foreground" />

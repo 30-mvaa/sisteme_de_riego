@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useApp } from "@/lib/app-context";
 import type { AuthUser, Role } from "@/lib/types";
+import { ROLE_LABELS, ADMIN_ROLES } from "@/lib/types";
 import { SUPERADMIN_USERNAME } from "@/lib/data";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -193,18 +194,35 @@ export default function AccessPage() {
         </Badge>
       );
     }
-    if (user.role === "admin") {
+    const role = user.role;
+    if (role === "admin") {
       return (
         <Badge className="bg-blue-100 text-blue-700 border-blue-200 gap-1">
           <ShieldCheck size={11} />
-          Admin
+          {ROLE_LABELS[role]}
+        </Badge>
+      );
+    }
+    if (role === "presidente") {
+      return (
+        <Badge className="bg-amber-100 text-amber-700 border-amber-200 gap-1">
+          <ShieldCheck size={11} />
+          {ROLE_LABELS[role]}
+        </Badge>
+      );
+    }
+    if (role === "secretario") {
+      return (
+        <Badge className="bg-teal-100 text-teal-700 border-teal-200 gap-1">
+          <ShieldCheck size={11} />
+          {ROLE_LABELS[role]}
         </Badge>
       );
     }
     return (
-      <Badge variant="secondary" className="gap-1">
-        <UserCog size={11} />
-        Usuario
+      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 gap-1">
+        <ShieldCheck size={11} />
+        {ROLE_LABELS[role] || role}
       </Badge>
     );
   };
@@ -315,7 +333,11 @@ export default function AccessPage() {
                                 ? "linear-gradient(135deg, #2563eb, #7c3aed)"
                                 : user.role === "admin"
                                   ? "linear-gradient(135deg, #0ea5e9, #2563eb)"
-                                  : "linear-gradient(135deg, #6b7280, #374151)",
+                                  : user.role === "presidente"
+                                    ? "linear-gradient(135deg, #f59e0b, #d97706)"
+                                    : user.role === "secretario"
+                                      ? "linear-gradient(135deg, #14b8a6, #0d9488)"
+                                      : "linear-gradient(135deg, #10b981, #059669)",
                           }}
                         >
                           {user.name.charAt(0).toUpperCase()}
@@ -538,10 +560,22 @@ export default function AccessPage() {
                       Administrador — acceso completo
                     </div>
                   </SelectItem>
-                  <SelectItem value="user">
+                  <SelectItem value="presidente">
                     <div className="flex items-center gap-2">
-                      <UserCog size={14} className="text-gray-500" />
-                      Usuario — acceso limitado
+                      <ShieldCheck size={14} className="text-amber-600" />
+                      Presidente — acceso completo (excepto Accesos)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="secretario">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={14} className="text-teal-600" />
+                      Secretario — acceso completo (excepto Accesos)
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="tesorero">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck size={14} className="text-emerald-600" />
+                      Tesorero — Cuotas, Eventos, Finanzas
                     </div>
                   </SelectItem>
                 </SelectContent>

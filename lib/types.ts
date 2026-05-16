@@ -1,4 +1,13 @@
-export type Role = "admin" | "user";
+export type Role = "admin" | "presidente" | "secretario" | "tesorero";
+
+export const ROLE_LABELS: Record<Role, string> = {
+  admin: "Administrador",
+  presidente: "Presidente",
+  secretario: "Secretario",
+  tesorero: "Tesorero",
+};
+
+export const ADMIN_ROLES: Role[] = ["admin", "presidente", "secretario"];
 
 export interface AuthUser {
   id: string;
@@ -8,7 +17,7 @@ export interface AuthUser {
   role: Role;
   name: string;
   enabled: boolean;
-  memberId?: string; // linked member (optional, for 'user' role)
+  memberId?: string;
 }
 
 // Land/Terrain details for each member

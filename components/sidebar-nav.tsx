@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/lib/app-context";
 import { SUPERADMIN_USERNAME } from "@/lib/data";
+import { ADMIN_ROLES, ROLE_LABELS, type Role } from "@/lib/types";
 import {
   LayoutDashboard,
   Users,
@@ -22,7 +23,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
-  adminOnly?: boolean;
+  allowedRoles?: Role[];
   superAdminOnly?: boolean;
   color: string;
   bg: string;
@@ -40,7 +41,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/users",
     label: "Usuarios",
     icon: Users,
-    adminOnly: true,
+    allowedRoles: ADMIN_ROLES,
     color: "text-sky-400",
     bg: "bg-sky-500/20",
   },
@@ -48,7 +49,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/monthly",
     label: "Cuotas Mensuales",
     icon: Receipt,
-    adminOnly: true,
+    allowedRoles: ["admin", "presidente", "secretario", "tesorero"],
     color: "text-emerald-400",
     bg: "bg-emerald-500/20",
   },
@@ -56,7 +57,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/events",
     label: "Eventos",
     icon: CalendarDays,
-    adminOnly: true,
+    allowedRoles: ["admin", "presidente", "secretario", "tesorero"],
     color: "text-violet-400",
     bg: "bg-violet-500/20",
   },
@@ -64,7 +65,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/reports",
     label: "Reportes",
     icon: BarChart3,
-    adminOnly: true,
+    allowedRoles: ADMIN_ROLES,
     color: "text-amber-400",
     bg: "bg-amber-500/20",
   },
@@ -72,7 +73,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/finanzas",
     label: "Finanzas",
     icon: PiggyBank,
-    adminOnly: true,
+    allowedRoles: ["admin", "presidente", "secretario", "tesorero"],
     color: "text-green-400",
     bg: "bg-green-500/20",
   },
@@ -107,7 +108,8 @@ export function SidebarNav() {
   const visibleItems = NAV_ITEMS.filter((item) => {
     if (item.superAdminOnly)
       return currentUser?.username === SUPERADMIN_USERNAME;
-    if (item.adminOnly) return currentUser?.role === "admin";
+    if (item.allowedRoles)
+      return item.allowedRoles.includes(currentUser?.role as Role);
     return true;
   });
 
@@ -195,8 +197,10 @@ export function SidebarNav() {
             <p className="text-white text-xs font-semibold truncate">
               {currentUser?.name}
             </p>
-            <p className="text-white/40 text-[10px] capitalize">
-              {currentUser?.role === "admin" ? "Administrador" : "Usuario"}
+            <p className="text-white/40 text-[10px]">
+              {currentUser?.role
+                ? ROLE_LABELS[currentUser.role as Role] ?? currentUser.role
+                : ""}
             </p>
           </div>
         </div>

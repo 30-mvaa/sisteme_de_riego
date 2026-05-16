@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import { useApp } from "@/lib/app-context";
-import { CONCEPT_LABELS } from "@/lib/types";
+import { CONCEPT_LABELS, ADMIN_ROLES, type Role } from "@/lib/types";
 import Link from "next/link";
 import {
   Users,
@@ -94,7 +94,8 @@ export default function DashboardPage() {
     );
   }
 
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin =
+    !!currentUser?.role && ADMIN_ROLES.includes(currentUser.role as Role);
 
   return (
     <div className="min-h-screen bg-gray-50">

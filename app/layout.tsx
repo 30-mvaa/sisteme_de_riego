@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Providers } from '@/components/providers'
+import { SwRegister } from '@/components/sw-register'
 import './globals.css'
 
 const _geist = Geist({ subsets: ["latin"] });
@@ -28,6 +29,7 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+  themeColor: '#16a34a',
 }
 
 export default function RootLayout({
@@ -42,6 +44,7 @@ export default function RootLayout({
           {children}
         </Providers>
         <Analytics />
+        <SwRegister />
       </body>
     </html>
   )
