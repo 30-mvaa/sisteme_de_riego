@@ -26,6 +26,7 @@ const files = [
   "004_add_email_to_auth_users.sql",
   "005_audit_logs.sql",
   "006_expenses.sql",
+  "007_update_role_check.sql",
 ];
 const client = new pg.Client({ connectionString: url });
 
