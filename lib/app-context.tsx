@@ -238,7 +238,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify(data),
         });
 
-        if (res.status === 409) return "El nombre de usuario ya existe.";
+        if (res.status === 409) {
+          const data = await res.json();
+          return data.error || "El nombre de usuario ya existe.";
+        }
         if (!res.ok) return "Error al crear el usuario.";
 
         const raw = await res.json();
@@ -265,7 +268,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify(data),
         });
 
-        if (res.status === 409) return "El nombre de usuario ya existe.";
+        if (res.status === 409) {
+          const data = await res.json();
+          return data.error || "El nombre de usuario ya existe.";
+        }
         if (!res.ok) return "Error al actualizar el usuario.";
 
         const raw = await res.json();

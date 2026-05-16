@@ -81,7 +81,7 @@ export default function AccessPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AuthUser | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [errors, setErrors] = useState<Partial<FormState>>({});
+  const [errors, setErrors] = useState<Partial<FormState & { form: string }>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
@@ -138,11 +138,21 @@ export default function AccessPage() {
   };
 
   const validate = (): boolean => {
-    const e: Partial<FormState> = {};
+    const e: Partial<FormState & { form: string }> = {};
     if (!form.name.trim()) e.name = "El nombre es obligatorio.";
     if (!form.username.trim()) e.username = "El usuario es obligatorio.";
     else if (!isUsernameUnique(form.username, editingUser?.id ?? undefined))
       e.username = "Este nombre de usuario ya existe.";
+    if (
+      form.email.trim() &&
+      authUsers.some(
+        (u) =>
+          u.email?.toLowerCase() === form.email.trim().toLowerCase() &&
+          u.id !== editingUser?.id,
+      )
+    ) {
+      e.email = "El correo electrónico ya está en uso.";
+    }
     if (!editingUser && !form.password.trim())
       e.password = "La contraseña es obligatoria.";
     else if (form.password && form.password.length < 4)
@@ -172,7 +182,7 @@ export default function AccessPage() {
     }
 
     if (error) {
-      setErrors({ username: error });
+      setErrors({ form: error });
       return;
     }
     setDialogOpen(false);
@@ -219,10 +229,19 @@ export default function AccessPage() {
         </Badge>
       );
     }
+    if (role === "tesorero") {
+      return (
+        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 gap-1">
+          <ShieldCheck size={11} />
+          {ROLE_LABELS[role]}
+        </Badge>
+      );
+    }
+    // legacy role fallback
     return (
-      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 gap-1">
-        <ShieldCheck size={11} />
-        {ROLE_LABELS[role] || role}
+      <Badge variant="secondary" className="gap-1">
+        <UserCog size={11} />
+        {role}
       </Badge>
     );
   };
@@ -455,6 +474,14 @@ export default function AccessPage() {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            {/* General error */}
+            {errors.form && (
+              <div className="flex items-center gap-2 bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-2.5 text-sm text-destructive">
+                <ShieldAlert size={15} className="shrink-0" />
+                <span>{errors.form}</span>
+              </div>
+            )}
+
             {/* Name */}
             <div className="space-y-1.5">
               <Label htmlFor="acc-name">Nombre completo *</Label>
@@ -507,6 +534,9 @@ export default function AccessPage() {
               <p className="text-xs text-muted-foreground">
                 Requerido para recuperación de contraseña
               </p>
+              {errors.email && (
+                <p className="text-xs text-destructive">{errors.email}</p>
+              )}
             </div>
 
             {/* Password */}
@@ -551,7 +581,7 @@ export default function AccessPage() {
                 }
               >
                 <SelectTrigger id="acc-role">
-                  <SelectValue />
+                  <SelectValue placeholder="Seleccionar rol" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">
